@@ -1,0 +1,165 @@
+# FYI Agent Configuration
+# Default configuration for the FYI Agent SASE client
+
+agent:
+  version: "0.1.0"
+  log_level: "info"  # debug, info, warn, error
+  log_format: "json" # json, text
+  data_dir: "/var/lib/fyi-agent"
+  pid_file: "/var/run/fyi-agent.pid"
+
+identity:
+  # Zero Trust identity provider configuration
+  provider: "oidc" # oidc, saml, certificate
+  issuer_url: "https://auth.certifyi.ai"
+  client_id: ""
+  client_secret: ""
+  # Token refresh interval in seconds
+  token_refresh_interval: 300
+  # Certificate-based auth (mTLS)
+  cert_file: ""
+  key_file: ""
+
+tunnel:
+  # TUN interface configuration
+  interface_name: "fyi0"
+  mtu: 1400
+  dns:
+    - "10.0.0.1"
+    - "10.0.0.2"
+  # Routes to tunnel through the agent
+  routes:
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+    - "192.168.0.0/16"
+
+steering:
+  # PAC (Proxy Auto-Configuration) settings
+  pac:
+    enabled: true
+    url: "https://pac.certifyi.ai/proxy.pac"
+    refresh_interval: 600 # seconds
+    fallback_mode: "direct" # direct, block
+  # VPN coexistence mode
+  vpn_coexistence:
+    enabled: true
+    detect_interval: 30 # seconds
+    priority: "fyi-first" # fyi-first, vpn-first, split
+  # Split tunnel rules
+  split_tunnel:
+    enabled: true
+    include: []
+    exclude:
+      - "*.local"
+      - "10.0.0.0/8"
+
+inspection:
+  # SSL/TLS inspection
+  ssl:
+    enabled: true
+    ca_cert_file: "/etc/fyi-agent/ca.pem"
+    ca_key_file: "/etc/fyi-agent/ca-key.pem"
+    bypass_domains:
+      - "*.bank.com"
+      - "*.healthcare.gov"
+      - "localhost"
+    min_tls_version: "1.2"
+  # DLP (Data Loss Prevention)
+  dlp:
+    enabled: true
+    # Policy refresh interval in seconds
+    policy_refresh_interval: 300
+    # Maximum file size to scan (bytes)
+    max_scan_size: 52428800 # 50MB
+    # Built-in pattern categories
+    patterns:
+      - name: "credit_card"
+        enabled: true
+        action: "block" # block, alert, log
+      - name: "ssn"
+        enabled: true
+        action: "block"
+      - name: "api_key"
+        enabled: true
+        action: "alert"
+      - name: "pii_email"
+        enabled: true
+        action: "log"
+
+policy:
+  # AI-driven policy engine
+  engine: "local" # local, remote, hybrid
+  remote_url: "https://policy.certifyi.ai/v1"
+  # Policy sync interval in seconds
+  sync_interval: 60
+  # Default action when policy unavailable
+  default_action: "allow" # allow, block, prompt
+  # Risk scoring thresholds
+  risk_thresholds:
+    low: 0.3
+    medium: 0.6
+    high: 0.8
+    critical: 0.95
+
+transport:
+  # Congestion control algorithm
+  congestion_control: "bbr" # bbr, cubic, reno
+  # Keep-alive interval in seconds
+  keepalive_interval: 25
+  # Connection timeout in seconds
+  connect_timeout: 30
+  # Reconnect settings
+  reconnect:
+    enabled: true
+    max_retries: 10
+    base_delay: 1 # seconds
+    max_delay: 300 # seconds
+    backoff_multiplier: 2.0
+
+captive_portal:
+  # Captive portal detection
+  enabled: true
+  detection_url: "http://detectportal.certifyi.ai/success"
+  detection_interval: 30 # seconds
+  # Auto-pause tunnel on captive portal detection
+  auto_pause: true
+  # Resume delay after portal authentication (seconds)
+  resume_delay: 5
+
+watchdog:
+  # Process watchdog configuration
+  enabled: true
+  health_check_interval: 15 # seconds
+  # Memory limit in MB before restart
+  memory_limit_mb: 512
+  # CPU usage threshold percentage
+  cpu_threshold_percent: 80
+  # Restart policy
+  max_restarts: 5
+  restart_window: 300 # seconds
+
+diagnostics:
+  # Self-service troubleshooting
+  enabled: true
+  # Metrics export
+  metrics:
+    enabled: true
+    port: 9090
+    path: "/metrics"
+  # Health endpoint
+  health:
+    port: 8080
+    path: "/healthz"
+  # Log collection for support
+  log_collection:
+    max_size_mb: 100
+    retention_days: 7
+
+mdm:
+  # MDM compatibility settings
+  enabled: false
+  provider: "" # jamf, intune, workspace_one
+  # Allow MDM to push configuration updates
+  allow_config_push: true
+  # Enrollment token
+  enrollment_token: ""
